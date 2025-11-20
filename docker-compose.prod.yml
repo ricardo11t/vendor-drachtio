@@ -1,0 +1,115 @@
+version: '3.8'
+
+# Production deployment for Drachtio SIP Server + Node.js app
+# This configuration is designed for a single VPS instance
+#
+# Before deploying:
+# 1. Set BACKEND_URL to your actual Railway backend URL
+# 2. Set PUBLIC_IP to your VPS public IP address
+# 3. Ensure ports 5060 (UDP/TCP) are open in firewall
+#
+# Usage:
+#   docker-compose -f docker-compose.prod.yml up -d
+#   docker-compose -f docker-compose.prod.yml logs -f app
+
+networks:
+  drachtio-net:
+    driver: bridge
+
+services:
+  # Drachtio SIP Server - handles incoming INVITE requests
+  drachtio:
+    image: drachtio/drachtio-server:latest
+    container_name: drachtio-server
+    restart: always
+    command: drachtio --contact "sip:*;transport=udp,tcp" --address 0.0.0.0 --port 9022
+    ports:
+      # SIP ports - CRITICAL: must be accessible from internet
+      - '5060:5060/udp'
+      - '5060:5060/tcp'
+      - '5061:5061/tcp'
+      # Drachtio control port (internal only)
+      - '9022:9022/tcp'
+    networks:
+      drachtio-net:
+        ipv4_address: 172.20.0.2
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "9022"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    environment:
+      # Security: change this in production
+      DRACHTIO_SECRET: cymru
+
+  # Redis - used for call state and registrar
+  redis:
+    image: redis:7-alpine
+    container_name: drachtio-redis
+    restart: always
+    ports:
+      - '6379:6379/tcp'
+    networks:
+      drachtio-net:
+        ipv4_address: 172.20.0.3
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Node.js application - handles SIP logic and LiveKit integration
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: drachtio-vendor-app
+    restart: unless-stopped
+    environment:
+      # Node environment
+      NODE_ENV: production
+      LOGLEVEL: info
+      
+      # Drachtio connection
+      DRACHTIO_HOST: drachtio
+      DRACHTIO_PORT: 9022
+      DRACHTIO_SECRET: cymru
+      
+      # Redis connection
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      
+      # ⚠️ CRITICAL: Update these for your deployment
+      # Backend URL - must be accessible from this container
+      # Example: https://your-backend-on-railway.up.railway.app
+      BACKEND_URL: https://seu-backend-na-railway.up.railway.app
+      
+      # Public IP - used in SIP Contact header for Wavoip
+      # This should be your VPS public IP address
+      PUBLIC_IP: 100.25.218.14
+      PUBLIC_SIP_PORT: 5060
+      
+      # LiveKit Cloud configuration
+      # (Optional if using Dispatch Rules)
+      LIVEKIT_URL: wss://21r9tnrcsmq.sip.livekit.cloud
+      LIVEKIT_KEY: APIjlD4YtLc34Gl
+      LIVEKIT_SECRET: eFiI3JxqZVVLb9wGGjYY6VfVRNP9BfuqEn7Y8sKd8hs
+    
+    depends_on:
+      drachtio:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    
+    networks:
+      drachtio-net:
+        ipv4_address: 172.20.0.4
+    
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  redis-data:

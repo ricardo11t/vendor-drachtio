@@ -6,14 +6,16 @@ networks:
         - subnet: 172.32.0.0/16
 
 services:
-
   drachtio:
     image: drachtio/drachtio-server:latest
     container_name: drachtio.org
     restart: always
     command: drachtio --contact "sip:*;transport=udp,tcp" --address 0.0.0.0 --port 9022
     ports:
-      - "9060:9022/tcp"
+      - '9022:9022/tcp'
+      - '5060:5060/udp'
+      - '5060:5060/tcp'
+      - '5061:5061/tcp'
     depends_on:
       freeswitch:
         condition: service_healthy
@@ -26,11 +28,11 @@ services:
     restart: always
     command: freeswitch --rtp-range-start 20000 --rtp-range-end 20100
     healthcheck:
-      test: ["CMD", "fs_cli" ,"-x", "sofia status"]
+      test: ['CMD', 'fs_cli', '-x', 'sofia status']
       timeout: 5s
       retries: 20
     ports:
-      - "8022:8021/tcp"
+      - '8022:8021/tcp'
     volumes:
       - /tmp:/tmp
     networks:
@@ -39,29 +41,51 @@ services:
 
   docker-host:
     image: qoomon/docker-host
-    cap_add: [ 'NET_ADMIN', 'NET_RAW' ]
+    cap_add: ['NET_ADMIN', 'NET_RAW']
     mem_limit: 8M
     restart: on-failure
     networks:
       drachtio:
         ipv4_address: 172.32.0.7
 
-
   redis:
     image: redis:5-alpine
     ports:
-      - "16379:6379/tcp"
+      - '16379:6379/tcp'
     networks:
       drachtio:
         ipv4_address: 172.32.0.52
 
+  app:
+    build: ..
+    container_name: drachtio-vendor-app
+    restart: unless-stopped
+    environment:
+      DRACHTIO_HOST: drachtio
+      DRACHTIO_PORT: 9022
+      DRACHTIO_SECRET: cymru
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      LOGLEVEL: info
+      LIVEKIT_URL: wss://21r9tnrcsmq.sip.livekit.cloud
+      LIVEKIT_KEY: APIjlD4YtLc34Gl
+      LIVEKIT_SECRET: eFiI3JxqZVVLb9wGGjYY6VfVRNP9BfuqEn7Y8sKd8hs
+      BACKEND_URL: http://backend:3000
+      PUBLIC_IP: 172.32.0.53
+      PUBLIC_SIP_PORT: 5060
+    depends_on:
+      - drachtio
+      - redis
+    networks:
+      drachtio:
+        ipv4_address: 172.32.0.53
+
   uas:
     image: drachtio/sipp:latest
-    command: sipp -sf /tmp/uas.xml
+    command: sipp -sf /tmp/scenarios/uas.xml
     volumes:
-      - ./scenarios:/tmp
+      - ./scenarios:/tmp/scenarios
     tty: true
     networks:
       drachtio:
         ipv4_address: 172.32.0.60
-
