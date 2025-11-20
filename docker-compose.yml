@@ -53,6 +53,7 @@ services:
       LIVEKIT_URL: wss://21r9tnrcsmq.sip.livekit.cloud
       LIVEKIT_KEY: APIjlD4YtLc34Gl
       LIVEKIT_SECRET: eFiI3JxqZVVLb9wGGjYY6VfVRNP9BfuqEn7Y8sKd8hs
+      LIVEKIT_TRUNK_ID: ST_hF9FKhKi4PfZ
     depends_on:
       drachtio:
         condition: service_started
