@@ -1,0 +1,66 @@
+version: '3.8'
+
+services:
+  # --- SIP Services ---
+  drachtio:
+    image: drachtio/drachtio-server:latest
+    container_name: drachtio-server
+    restart: always
+    command: drachtio --contact "sip:*;transport=udp,tcp" --address 0.0.0.0 --port 9022
+    ports:
+      - '5060:5060/udp'
+      - '5060:5060/tcp'
+      - '5061:5061/tcp'
+      - '9022:9022/tcp'
+    networks:
+      - drachtio-net
+    environment:
+      DRACHTIO_SECRET: cymru
+
+  redis:
+    image: redis:7-alpine
+    container_name: drachtio-redis
+    restart: always
+    networks:
+      - drachtio-net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  sip-controller:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: drachtio-controller
+    restart: always
+    environment:
+      NODE_ENV: production
+      LOGLEVEL: info
+      DRACHTIO_HOST: drachtio
+      DRACHTIO_PORT: 9022
+      DRACHTIO_SECRET: cymru
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      # Backend URL - Assuming it's running on the same VPS on port 8002
+      # Using the Public IP to ensure reachability. 
+      BACKEND_URL: http://56.125.223.86:8002/api
+      # Public IP of the VPS
+      PUBLIC_IP: 56.125.223.86
+      PUBLIC_SIP_PORT: 5060
+      # LiveKit Config
+      LIVEKIT_URL: wss://21r9tnrcsmq.sip.livekit.cloud
+      LIVEKIT_KEY: APIjlD4YtLc34Gl
+      LIVEKIT_SECRET: eFiI3JxqZVVLb9wGGjYY6VfVRNP9BfuqEn7Y8sKd8hs
+    depends_on:
+      drachtio:
+        condition: service_started
+      redis:
+        condition: service_healthy
+    networks:
+      - drachtio-net
+
+networks:
+  drachtio-net:
+    driver: bridge
