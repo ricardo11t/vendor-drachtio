@@ -14,14 +14,18 @@ const { initLocals, checkCache, challenge } =
 const regParser = require('drachtio-mw-registration-parser');
 const Registrar = require('@jambonz/mw-registrar');
 const CallSession = require('./lib/call-session');
+const Redis = require('ioredis');
 const {
   registerOutboundTrunks,
   startRegistrationRefresh,
 } = require('./lib/outbound-registration');
-srf.locals.registrar = new Registrar(logger, {
+
+const redisClient = new Redis({
   host: process.env.REDIS_HOST || '127.0.0.1',
   port: process.env.REDIS_PORT || 6379,
 });
+
+srf.locals.registrar = new Registrar(logger, redisClient);
 
 srf.connect({
   host: process.env.DRACHTIO_HOST || '127.0.0.1',
