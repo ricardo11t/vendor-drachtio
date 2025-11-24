@@ -19,6 +19,7 @@
     "drachtio-mw-registration-parser": "^0.1.2",
     "drachtio-srf": "^5.0.14",
     "ioredis": "^5.8.2",
+    "ip-range-check": "^0.2.0",
     "livekit-server-sdk": "^2.14.1",
     "pino": "^10.1.0"
   }

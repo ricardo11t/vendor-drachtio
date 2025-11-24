@@ -54,6 +54,8 @@ services:
       LIVEKIT_KEY: APIjlD4YtLc34Gl
       LIVEKIT_SECRET: eFiI3JxqZVVLb9wGGjYY6VfVRNP9BfuqEn7Y8sKd8hs
       LIVEKIT_TRUNK_ID: ST_hF9FKhKi4PfZ
+      # Whitelist IPs (comma separated). Add WavVoIP IPs here.
+      ALLOWED_SIP_IPS: ""
     depends_on:
       drachtio:
         condition: service_started

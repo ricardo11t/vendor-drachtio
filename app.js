@@ -9,7 +9,7 @@ const opts = Object.assign(
   { level: process.env.LOGLEVEL || 'info' },
 );
 const logger = require('pino')(opts);
-const { initLocals, checkCache, challenge } =
+const { initLocals, checkCache, challenge, checkIpWhitelist } =
   require('./lib/middleware')(logger);
 const regParser = require('drachtio-mw-registration-parser');
 const Registrar = require('@jambonz/mw-registrar');
