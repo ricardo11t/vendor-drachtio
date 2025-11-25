@@ -6,14 +6,10 @@ services:
     image: drachtio/drachtio-server:latest
     container_name: drachtio-server
     restart: always
+    # MUDANÇA CRUCIAL: Rede do Host (VPS) direta
+    network_mode: "host"
+    # Comando padrão seguro
     command: drachtio --contact "sip:*;transport=udp,tcp" --address 0.0.0.0 --port 9022
-    ports:
-      - '5060:5060/udp'
-      - '5060:5060/tcp'
-      - '5061:5061/tcp'
-      - '9022:9022/tcp'
-    networks:
-      - drachtio-net
     environment:
       DRACHTIO_SECRET: cymru
 
@@ -21,13 +17,26 @@ services:
     image: redis:7-alpine
     container_name: drachtio-redis
     restart: always
-    networks:
-      - drachtio-net
+    # Redis também no host para o app achar via 127.0.0.1
+    network_mode: "host"
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
+  rtpengine:
+    image: jambonz/rtpengine:latest
+    container_name: rtpengine
+    restart: always
+    network_mode: "host"
+    command: <
+      rtpengine --interface=pub/56.125.223.86!172.31.2.132
+      --listen-ng=127.0.0.1:22222
+      --pidfile=/var/run/rtpengine.pid
+      --port-min=20000 --port-max=30000
+      --recording-method=none
+      --log-level=7
+    privileged: true
 
   sip-controller:
     build:
@@ -35,35 +44,41 @@ services:
       dockerfile: Dockerfile
     container_name: drachtio-controller
     restart: always
+    # App no host para ter acesso ao IP público real
+    network_mode: "host"
     environment:
       NODE_ENV: production
       LOGLEVEL: info
-      DRACHTIO_HOST: drachtio
+      # Como todos estão no modo host, eles se falam via localhost
+      DRACHTIO_HOST: 127.0.0.1
       DRACHTIO_PORT: 9022
       DRACHTIO_SECRET: cymru
-      REDIS_HOST: redis
+      REDIS_HOST: 127.0.0.1
       REDIS_PORT: 6379
-      # Backend URL - Assuming it's running on the same VPS on port 8002
-      # Using the Public IP to ensure reachability. 
-      BACKEND_URL: http://56.125.223.86:8002/api
-      # Public IP of the VPS
+      
+      # Backend Configuration
+      BACKEND_URL: https://vendor-api.up.railway.app/api
+      
+      # SEU IP PÚBLICO DA VPS
       PUBLIC_IP: 56.125.223.86
       PUBLIC_SIP_PORT: 5060
+      
       # LiveKit Config
-      LIVEKIT_URL: wss://21r9tnrcsmq.sip.livekit.cloud
-      LIVEKIT_KEY: APIjlD4YtLc34Gl
-      LIVEKIT_SECRET: eFiI3JxqZVVLb9wGGjYY6VfVRNP9BfuqEn7Y8sKd8hs
-      LIVEKIT_TRUNK_ID: ST_hF9FKhKi4PfZ
-      # Whitelist IPs (comma separated). Add WavVoIP IPs here.
+      LIVEKIT_URL: wss://first-project-3x5eth4v.livekit.cloud
+      LIVEKIT_KEY: APIeo6J7jBhrZuv
+      LIVEKIT_SECRET: ZelZO2Je8enQf6cku0N1XFe9fQnNhPwBr4wcmfSTzWhT
+      # O ID DA DISPATCH RULE CORRETA (Wavoip Inbound)
+      LIVEKIT_TRUNK_ID: ST_juWedU6TZJqf
+      
       ALLOWED_SIP_IPS: ""
     depends_on:
       drachtio:
         condition: service_started
       redis:
         condition: service_healthy
-    networks:
-      - drachtio-net
-
-networks:
-  drachtio-net:
-    driver: bridge
+    # Proteção para o disco não encher
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"

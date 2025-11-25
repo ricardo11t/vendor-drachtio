@@ -32,6 +32,11 @@ srf.connect({
   port: process.env.DRACHTIO_PORT || 9022,
   secret: process.env.DRACHTIO_SECRET || 'cymru',
 });
+
+srf.on('error', (err) => {
+  logger.error(err, 'Erro na conxão com o Drachtio. Aguardando...');
+});
+
 srf.on('connect', async (err, hp) => {
   if (err) return logger.error({ err }, 'Error connecting to drachtio');
   logger.info(`connected to drachtio listening on ${hp}`);
