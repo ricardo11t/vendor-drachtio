@@ -30,7 +30,7 @@ services:
     container_name: rtpengine
     restart: always
     network_mode: "host"
-    entrypoint: /usr/sbin/rtpengine
+    entrypoint: /usr/local/bin/rtpengine
     command: <
       --interface=public/56.125.223.86!172.31.2.132
       --listen-ng=127.0.0.1:22222
