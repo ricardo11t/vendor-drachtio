@@ -31,14 +31,14 @@ services:
     restart: always
     network_mode: "host"
     entrypoint: /usr/local/bin/rtpengine
-    command: <
-      rtpengine --interface=public/172.31.2.132!56.125.223.86
+    command: >
+      "rtpengine --interface=public/172.31.2.132!56.125.223.86
       --listen-ng=127.0.0.1:22222
       --pidfile=/var/run/rtpengine.pid
       --port-min=20000 --port-max=30000
       --recording-method=none
-      --log-level=6
-      --foreground
+      --log-level=7
+      --foreground"
     privileged: true
 
   sip-controller:
