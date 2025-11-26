@@ -18,26 +18,47 @@ jobs:
       - name: Validar secrets configurados
         run: |
           echo "🔐 Validando configuração de secrets..."
+          echo ""
+          echo "Secrets necessários:"
+          echo "  1. EC2_HOST"
+          echo "  2. EC2_USERNAME"  
+          echo "  3. EC2_SSH_KEY"
+          echo ""
+          
+          SECRETS_OK=true
           
           if [ -z "${{ secrets.EC2_HOST }}" ]; then
             echo "❌ EC2_HOST não está configurado"
-            echo "Adicione em: Settings > Environments > deploy_production > Secrets"
-            exit 1
+            SECRETS_OK=false
+          else
+            echo "✅ EC2_HOST configurado"
           fi
           
           if [ -z "${{ secrets.EC2_USERNAME }}" ]; then
             echo "❌ EC2_USERNAME não está configurado"
-            exit 1
+            SECRETS_OK=false
+          else
+            echo "✅ EC2_USERNAME configurado"
           fi
           
           if [ -z "${{ secrets.EC2_SSH_KEY }}" ]; then
             echo "❌ EC2_SSH_KEY não está configurado"
+            SECRETS_OK=false
+          else
+            echo "✅ EC2_SSH_KEY configurado"
+          fi
+          
+          echo ""
+          if [ "$SECRETS_OK" = false ]; then
+            echo "⚠️  Para configurar os secrets:"
+            echo "   1. Vá para: https://github.com/ricardo11t/vendor-drachtio/settings/environments/deploy_production"
+            echo "   2. Clique em 'Add environment secret'"
+            echo "   3. Configure cada secret com o seu valor"
+            echo ""
             exit 1
           fi
           
-          echo "✅ Todos os secrets estão configurados"
-          echo "Host: ${{ secrets.EC2_HOST }}"
-          echo "Username: ${{ secrets.EC2_USERNAME }}"
+          echo "✅ Todos os secrets estão configurados!"
       
       - name: Validar estrutura do projeto
         run: |
