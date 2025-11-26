@@ -48,7 +48,7 @@ async function getSipConfig() {
   // Fetch fresh config from backend
   const backendUrl = process.env.BACKEND_URL || 'http://backend:8002';
   try {
-    sipConfigCache = await fetchSipConfig(backendUrl);
+    sipConfigCache = await fetchSipConfig(backendUrl, logger);
     configCacheTime = now;
     logger.info('✅ SIP config fetched from backend and cached');
     return sipConfigCache;
