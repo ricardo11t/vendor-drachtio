@@ -13,7 +13,7 @@ const { initLocals, checkCache, challenge, checkIpWhitelist } =
   require('./lib/middleware')(logger);
 const regParser = require('drachtio-mw-registration-parser');
 const Registrar = require('@jambonz/mw-registrar');
-const CallSession = require('./lib/call-session');
+const CallSession = require('./lib/call-session-dynamic');
 const Redis = require('ioredis');
 const {
   registerOutboundTrunks,
