@@ -58,6 +58,7 @@ services:
       REDIS_HOST: 127.0.0.1
       REDIS_PORT: 6379
       
+      PUBLIC_IP: ${PUBLIC_IP}
       BACKEND_URL: ${BACKEND_URL}
       VENDOR_API_KEY: ${VENDOR_API_KEY}
       
