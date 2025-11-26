@@ -15,65 +15,114 @@ jobs:
       - name: Checkout do codigo
         uses: actions/checkout@v4
       
+      - name: Validar secrets configurados
+        run: |
+          echo "🔐 Validando configuração de secrets..."
+          
+          if [ -z "${{ secrets.EC2_HOST }}" ]; then
+            echo "❌ EC2_HOST não está configurado"
+            echo "Adicione em: Settings > Environments > deploy_production > Secrets"
+            exit 1
+          fi
+          
+          if [ -z "${{ secrets.EC2_USERNAME }}" ]; then
+            echo "❌ EC2_USERNAME não está configurado"
+            exit 1
+          fi
+          
+          if [ -z "${{ secrets.EC2_SSH_KEY }}" ]; then
+            echo "❌ EC2_SSH_KEY não está configurado"
+            exit 1
+          fi
+          
+          echo "✅ Todos os secrets estão configurados"
+          echo "Host: ${{ secrets.EC2_HOST }}"
+          echo "Username: ${{ secrets.EC2_USERNAME }}"
+      
       - name: Validar estrutura do projeto
         run: |
           echo "📋 Validando estrutura do projeto..."
           test -f docker-compose.yml || (echo "❌ docker-compose.yml não encontrado!" && exit 1)
-          test -f package.json || (echo "⚠️ Aviso: package.json não encontrado" && true)
           echo "✅ Estrutura validada"
       
       - name: Deploy no EC2 via SSH
-        uses: appleboy/ssh-action@v1.0.3
+        uses: appleboy/ssh-action@v1.6.1
         with:
-          host: ${{secrets.EC2_HOST}}
-          username: ${{secrets.EC2_USERNAME}}
-          key: ${{secrets.EC2_SSH_KEY}}
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
           port: 22
+          timeout: 60s
+          command_timeout: 30s
+          debug: true
           script: |
             set -e  # Exit on error
             
             echo "🚀 Iniciando deploy do Vendor Drachtio..."
+            echo "🕐 $(date)"
             
-            # Verificar conectividade
-            if ! ping -c 1 8.8.8.8 &> /dev/null; then
-              echo "❌ Sem conexão de internet"
+            # Verificar se estamos no diretório certo
+            pwd
+            ls -la
+            
+            # Navegar para o diretório do projeto
+            if [ -d "$HOME/vendor-drachtio" ]; then
+              cd "$HOME/vendor-drachtio/"
+            elif [ -d "$HOME/projects/vendor-drachtio" ]; then
+              cd "$HOME/projects/vendor-drachtio/"
+            elif [ -d "/opt/vendor-drachtio" ]; then
+              cd "/opt/vendor-drachtio/"
+            else
+              echo "❌ Nenhum diretório vendor-drachtio encontrado"
+              find $HOME -type d -name "vendor-drachtio" 2>/dev/null || echo "Nenhum diretório encontrado"
               exit 1
             fi
             
-            cd ~/vendor-drachtio/ || (echo "❌ Diretório ~/vendor-drachtio/ não encontrado" && exit 1)
+            echo "📂 Diretório atual: $(pwd)"
+            
+            # Verificar se git está disponível
+            if ! command -v git &> /dev/null; then
+              echo "❌ Git não está instalado"
+              exit 1
+            fi
             
             # Pull do código
             echo "📥 Fazendo pull do código..."
             git pull origin main || (echo "❌ Erro ao fazer pull" && exit 1)
             
             # Verificar estrutura
-            test -f docker-compose.yml || (echo "❌ docker-compose.yml não encontrado após pull!" && exit 1)
+            test -f docker-compose.yml || (echo "❌ docker-compose.yml não encontrado!" && exit 1)
+            echo "✅ docker-compose.yml encontrado"
+            
+            # Verificar se Docker está disponível
+            if ! command -v docker &> /dev/null; then
+              echo "❌ Docker não está instalado"
+              exit 1
+            fi
             
             # Build e start
             echo "🐳 Construindo e iniciando containers..."
             docker-compose down || true
-            docker-compose up -d --build || (echo "❌ Erro ao iniciar containers" && exit 1)
+            docker-compose up -d --build
             
             # Aguardar health check
             echo "⏳ Aguardando containers ficarem saudáveis..."
-            sleep 10
+            sleep 15
             
-            # Verificar se Drachtio está respondendo
-            if docker exec vendor-drachtio pgrep -f "drachtio-server" > /dev/null 2>&1; then
-              echo "✅ Drachtio está rodando"
-            else
-              echo "⚠️ Aviso: Drachtio pode não estar totalmente inicializado"
-            fi
+            # Verificar status dos containers
+            echo "📊 Status dos containers:"
+            docker-compose ps
             
             # Limpeza
             echo "🧹 Limpando imagens não utilizadas..."
             docker image prune -f --filter "dangling=true"
             
             echo "✅ Deploy concluído com sucesso!"
+            echo "🕐 $(date)"
       
       - name: Notificar sucesso
         if: success()
-        run: echo "🎉 Deploy bem-sucedido em $(date)"
+        run: echo "🎉 Deploy bem-sucedido!"
       
       - name: Notificar falha
         if: failure()
@@ -81,4 +130,5 @@ jobs:
           echo "❌ Deploy FALHOU"
           echo "Verifique os logs do GitHub Actions para detalhes"
           exit 1
+
 
