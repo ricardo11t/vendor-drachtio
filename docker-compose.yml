@@ -47,39 +47,25 @@ services:
       dockerfile: Dockerfile
     container_name: drachtio-controller
     restart: always
-    # App no host para ter acesso ao IP público real
     network_mode: "host"
     environment:
       NODE_ENV: production
       LOGLEVEL: info
-      # Como todos estão no modo host, eles se falam via localhost
+      
       DRACHTIO_HOST: 127.0.0.1
       DRACHTIO_PORT: 9022
       DRACHTIO_SECRET: cymru
       REDIS_HOST: 127.0.0.1
       REDIS_PORT: 6379
       
-      # Backend Configuration
-      BACKEND_URL: https://vendor-api.up.railway.app/api
+      BACKEND_URL: ${BACKEND_URL}
+      VENDOR_API_KEY: ${VENDOR_API_KEY}
       
-      # SEU IP PÚBLICO DA VPS
-      PUBLIC_IP: 56.125.223.86
-      PUBLIC_SIP_PORT: 5060
-      
-      # LiveKit Config
-      LIVEKIT_URL: wss://first-project-3x5eth4v.livekit.cloud
-      LIVEKIT_KEY: APIeo6J7jBhrZuv
-      LIVEKIT_SECRET: ZelZO2Je8enQf6cku0N1XFe9fQnNhPwBr4wcmfSTzWhT
-      # O ID DA DISPATCH RULE CORRETA (Wavoip Inbound)
-      LIVEKIT_TRUNK_ID: ST_juWedU6TZJqf
-      
-      ALLOWED_SIP_IPS: ""
     depends_on:
       drachtio:
         condition: service_started
       redis:
         condition: service_healthy
-    # Proteção para o disco não encher
     logging:
       driver: "json-file"
       options:

@@ -7,6 +7,9 @@ RUN npm install
 
 COPY . .
 
+# ============================================================
+# VARIÁVEIS INTERNAS (não mexer)
+# ============================================================
 ENV NODE_ENV=production
 ENV DRACHTIO_HOST=drachtio
 ENV DRACHTIO_PORT=9022
@@ -14,11 +17,13 @@ ENV DRACHTIO_SECRET=cymru
 ENV REDIS_HOST=redis
 ENV REDIS_PORT=6379
 ENV LOGLEVEL=info
-ENV LIVEKIT_URL=wss://21r9tnrcsmq.sip.livekit.cloud
-ENV LIVEKIT_KEY=APIjlD4YtLc34Gl
-ENV LIVEKIT_SECRET=eFiI3JxqZVVLb9wGGjYY6VfVRNP9BfuqEn7Y8sKd8hs
-ENV BACKEND_URL=http://backend:3000
-ENV PUBLIC_IP=100.25.218.14
-ENV PUBLIC_SIP_PORT=5060
+
+# ============================================================
+# CONFIGURAR NO DOCKER-COMPOSE:
+# - BACKEND_URL
+# - API_KEY_SIP
+# 
+# TODO O RESTO VEM DA API!
+# ============================================================
 
 CMD ["npm", "start"]

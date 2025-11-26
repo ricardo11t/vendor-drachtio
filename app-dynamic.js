@@ -46,7 +46,7 @@ async function getSipConfig() {
   }
 
   // Fetch fresh config from backend
-  const backendUrl = process.env.BACKEND_URL || 'http://backend:3000';
+  const backendUrl = process.env.BACKEND_URL || 'http://backend:8002';
   try {
     sipConfigCache = await fetchSipConfig(backendUrl);
     configCacheTime = now;
@@ -61,16 +61,9 @@ async function getSipConfig() {
       return sipConfigCache;
     }
     
-    // Fall back to environment variables as last resort
-    logger.warn('Using fallback environment variables for SIP config');
-    return {
-      livekitSipDomain: process.env.LIVEKIT_SIP_DOMAIN || 'sip.livekit.cloud',
-      publicIp: process.env.PUBLIC_IP || '127.0.0.1',
-      publicSipPort: parseInt(process.env.PUBLIC_SIP_PORT || '5060'),
-      livekitInboundTrunkId: process.env.LIVEKIT_TRUNK_ID || 'ST_juWedU6TZJqf',
-      rtpEngineHost: process.env.RTP_ENGINE_HOST || '127.0.0.1',
-      rtpEnginePort: parseInt(process.env.RTP_ENGINE_PORT || '22222'),
-    };
+    // Se não conseguir buscar da API e não há cache, erro crítico
+    logger.error('❌ CRITICAL: Cannot load SIP config from backend and no cache available');
+    throw new Error('Failed to load SIP configuration from backend API');
   }
 }
 

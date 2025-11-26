@@ -2,12 +2,12 @@
   "name": "vendor-drachtio",
   "version": "1.0.0",
   "description": "starter drachtio app",
-  "main": "app.js",
+  "main": "app-dynamic.js",
   "scripts": {
-    "start": "node app",
+    "start": "node app-dynamic.js",
     "test": "NODE_ENV=test LOGLEVEL=error DRACHTIO_PORT=9060 FREESWITCH_PORT=8022 REDIS_PORT=16379 node test/ | ./node_modules/.bin/tap-spec",
     "coverage": "NODE_ENV=test DRACHTIO_PORT=9060 FREESWITCH_PORT=8022 REDIS_PORT=16379 ./node_modules/.bin/nyc --reporter html --report-dir ./coverage npm run test",
-    "jslint": "eslint app.js lib"
+    "jslint": "eslint app-dynamic.js lib"
   },
   "author": "",
   "license": "MIT",
