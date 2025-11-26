@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - main
-  workflow_dispatch:  # Permite deploy manual
+  workflow_dispatch:
 
 jobs:
   deploy:
@@ -14,57 +14,6 @@ jobs:
     steps:
       - name: Checkout do codigo
         uses: actions/checkout@v4
-      
-      - name: Validar secrets configurados
-        run: |
-          echo "🔐 Validando configuração de secrets..."
-          echo ""
-          echo "Secrets necessários:"
-          echo "  1. EC2_HOST"
-          echo "  2. EC2_USERNAME"  
-          echo "  3. EC2_SSH_KEY"
-          echo ""
-          
-          SECRETS_OK=true
-          
-          if [ -z "${{ secrets.EC2_HOST }}" ]; then
-            echo "❌ EC2_HOST não está configurado"
-            SECRETS_OK=false
-          else
-            echo "✅ EC2_HOST configurado"
-          fi
-          
-          if [ -z "${{ secrets.EC2_USERNAME }}" ]; then
-            echo "❌ EC2_USERNAME não está configurado"
-            SECRETS_OK=false
-          else
-            echo "✅ EC2_USERNAME configurado"
-          fi
-          
-          if [ -z "${{ secrets.EC2_SSH_KEY }}" ]; then
-            echo "❌ EC2_SSH_KEY não está configurado"
-            SECRETS_OK=false
-          else
-            echo "✅ EC2_SSH_KEY configurado"
-          fi
-          
-          echo ""
-          if [ "$SECRETS_OK" = false ]; then
-            echo "⚠️  Para configurar os secrets:"
-            echo "   1. Vá para: https://github.com/ricardo11t/vendor-drachtio/settings/environments/deploy_production"
-            echo "   2. Clique em 'Add environment secret'"
-            echo "   3. Configure cada secret com o seu valor"
-            echo ""
-            exit 1
-          fi
-          
-          echo "✅ Todos os secrets estão configurados!"
-      
-      - name: Validar estrutura do projeto
-        run: |
-          echo "📋 Validando estrutura do projeto..."
-          test -f docker-compose.yml || (echo "❌ docker-compose.yml não encontrado!" && exit 1)
-          echo "✅ Estrutura validada"
       
       - name: Deploy no EC2 via SSH
         uses: appleboy/ssh-action@v1.0.3
@@ -79,8 +28,8 @@ jobs:
           script: |
             set -e  # Exit on error
             
-            echo "🚀 Iniciando deploy do Vendor Drachtio..."
-            echo "🕐 $(date)"
+            echo "Iniciando deploy do Vendor Drachtio..."
+            echo "$(date)"
             
             # Verificar se estamos no diretório certo
             pwd
@@ -94,61 +43,53 @@ jobs:
             elif [ -d "/opt/vendor-drachtio" ]; then
               cd "/opt/vendor-drachtio/"
             else
-              echo "❌ Nenhum diretório vendor-drachtio encontrado"
+              echo "Nenhum diretório vendor-drachtio encontrado"
               find $HOME -type d -name "vendor-drachtio" 2>/dev/null || echo "Nenhum diretório encontrado"
               exit 1
             fi
             
-            echo "📂 Diretório atual: $(pwd)"
-            
-            # Verificar se git está disponível
+            echo "Diretório atual: $(pwd)"
+
             if ! command -v git &> /dev/null; then
-              echo "❌ Git não está instalado"
+              echo "Git não está instalado"
               exit 1
             fi
+
+            echo "Fazendo pull do código..."
+            git pull origin main || (echo "Erro ao fazer pull" && exit 1)
             
-            # Pull do código
-            echo "📥 Fazendo pull do código..."
-            git pull origin main || (echo "❌ Erro ao fazer pull" && exit 1)
-            
-            # Verificar estrutura
-            test -f docker-compose.yml || (echo "❌ docker-compose.yml não encontrado!" && exit 1)
-            echo "✅ docker-compose.yml encontrado"
+            test -f docker-compose.yml || (echo "docker-compose.yml não encontrado!" && exit 1)
+            echo "docker-compose.yml encontrado"
             
             # Verificar se Docker está disponível
             if ! command -v docker &> /dev/null; then
-              echo "❌ Docker não está instalado"
+              echo "Docker não está instalado"
               exit 1
             fi
             
-            # Build e start
-            echo "🐳 Construindo e iniciando containers..."
             docker-compose down || true
             docker-compose up -d --build
-            
-            # Aguardar health check
-            echo "⏳ Aguardando containers ficarem saudáveis..."
+
             sleep 15
-            
-            # Verificar status dos containers
-            echo "📊 Status dos containers:"
+
+            echo "Status dos containers Docker:"
             docker-compose ps
             
             # Limpeza
-            echo "🧹 Limpando imagens não utilizadas..."
+            echo "Limpando imagens não utilizadas..."
             docker image prune -f --filter "dangling=true"
             
-            echo "✅ Deploy concluído com sucesso!"
-            echo "🕐 $(date)"
+            echo "Deploy concluído com sucesso!"
+            echo "$(date)"
       
       - name: Notificar sucesso
         if: success()
-        run: echo "🎉 Deploy bem-sucedido!"
+        run: echo "Deploy bem-sucedido!"
       
       - name: Notificar falha
         if: failure()
         run: |
-          echo "❌ Deploy FALHOU"
+          echo "Deploy FALHOU"
           echo "Verifique os logs do GitHub Actions para detalhes"
           exit 1
 
