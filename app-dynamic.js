@@ -19,6 +19,10 @@ const {
   registerOutboundTrunks,
   startRegistrationRefresh,
 } = require('./lib/outbound-registration');
+const {
+  initializeProviderRegistrations,
+  startProviderRegistrationRefresh,
+} = require('./lib/provider-registration');
 const { fetchSipConfig } = require('./lib/sip-config');
 
 const redisClient = new Redis({
@@ -96,6 +100,16 @@ srf.on('connect', async (err, hp) => {
     startRegistrationRefresh(srf, logger);
   } catch (err) {
     logger.error({ err }, 'Error registering outbound trunks');
+    // Non-fatal error - continue anyway
+  }
+
+  // Initialize provider registrations from backend
+  try {
+    srf.locals.activeProviderRegistrations =
+      await initializeProviderRegistrations(srf, logger);
+    startProviderRegistrationRefresh(srf, logger);
+  } catch (err) {
+    logger.error({ err }, 'Error initializing provider registrations');
     // Non-fatal error - continue anyway
   }
 });
