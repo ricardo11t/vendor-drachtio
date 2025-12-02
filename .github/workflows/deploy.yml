@@ -130,8 +130,11 @@ jobs:
             echo "Removendo imagens antigas para forçar rebuild..."
             docker rmi vendor-drachtio-sip-controller:latest 2>/dev/null || true
             
-            echo "Buildando e iniciando nova versão (sem cache)..."
-            docker-compose up -d --build --no-cache
+            echo "Buildando imagem sem cache..."
+            docker build --no-cache -t vendor-drachtio-sip-controller:latest .
+            
+            echo "Iniciando containers..."
+            docker-compose up -d
 
             sleep 15
 
