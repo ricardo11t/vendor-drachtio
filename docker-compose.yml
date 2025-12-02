@@ -8,8 +8,8 @@ services:
     restart: always
     # MUDANÇA CRUCIAL: Rede do Host (VPS) direta
     network_mode: "host"
-    # CORREÇÃO: Porta 5060 para SIP (REGISTER/INVITE) - bind em 127.0.0.1
-    command: drachtio --contact "sip:*;transport=udp,tcp" --address 127.0.0.1 --port 5060
+    # CORREÇÃO: Porta 5060 para SIP (REGISTER/INVITE), 9022 para aplicações drachtio
+    command: drachtio --contact "sip:*;transport=udp,tcp" --address 0.0.0.0 --port 5060 --application-port 9022
     environment:
       DRACHTIO_SECRET: cymru
 
