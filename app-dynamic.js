@@ -114,24 +114,47 @@ srf.on('connect', async (err, hp) => {
   }
 });
 
-// Apply global middleware to all requests
+// ============================================================
+// MIDDLEWARE CONFIGURATION (MUST BE BEFORE HANDLERS)
+// ============================================================
 srf.use([initLocals]);
+srf.use('register', [regParser, checkCache, challenge]);
 
+// ============================================================
+// REQUEST HANDLERS
+// ============================================================
 srf.invite(async (req, res) => {
-  logger.info({ callId: req.get('Call-ID'), uri: req.uri }, '📞 INVITE received - starting call session');
+  const callId = req.get('Call-ID');
+  const uri = req.uri;
+  
+  logger.info({ 
+    callId, 
+    uri,
+    from: req.get('From'),
+    to: req.get('To'),
+    source: `${req.source_address}:${req.source_port}`
+  }, '🎯 INVITE HANDLER TRIGGERED - Processing call');
   
   // Refresh SIP config before each call (with cache)
   try {
     req.srf.locals.sipConfig = await getSipConfig();
+    logger.info({ callId }, '✅ SIP config loaded for this call');
   } catch (err) {
-    logger.error({ err }, 'Failed to get SIP config for call');
+    logger.error({ err, callId }, 'Failed to get SIP config for call');
   }
   
-  const session = new CallSession(req, res);
-  session.connect();
+  try {
+    const session = new CallSession(req, res);
+    logger.info({ callId }, '▶️  Starting CallSession.connect()');
+    session.connect();
+  } catch (handlerErr) {
+    logger.error({ err: handlerErr, callId }, '❌ Error in INVITE handler');
+    if (!res.finalResponseSent) {
+      res.send(500, 'Internal Server Error');
+    }
+  }
 });
 
-srf.use('register', [regParser, checkCache, challenge]);
 srf.register(require('./lib/register')({ logger }));
 srf.subscribe(require('./lib/subscribe')({ logger }));
 srf.publish(require('./lib/publish')({ logger }));
