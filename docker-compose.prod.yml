@@ -22,8 +22,7 @@ services:
     image: drachtio/drachtio-server:latest
     container_name: drachtio-server
     restart: always
-    # CORREÇÃO: Porta 5060 para SIP (REGISTER/INVITE), 9022 para protocolo drachtio
-    command: drachtio --contact "sip:*;transport=udp,tcp" --address 0.0.0.0 --port 5060 --drachtio-port 9022
+    command: drachtio --contact "sip:*;transport=udp,tcp" --address 0.0.0.0 --port 5060
     ports:
       # SIP ports - CRITICAL: must be accessible from internet
       - '5060:5060/udp'
