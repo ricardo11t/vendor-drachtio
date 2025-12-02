@@ -114,7 +114,12 @@ srf.on('connect', async (err, hp) => {
   }
 });
 
-srf.invite([initLocals], async (req, res) => {
+// Apply global middleware to all requests
+srf.use([initLocals]);
+
+srf.invite(async (req, res) => {
+  logger.info({ callId: req.get('Call-ID'), uri: req.uri }, '📞 INVITE received - starting call session');
+  
   // Refresh SIP config before each call (with cache)
   try {
     req.srf.locals.sipConfig = await getSipConfig();
@@ -126,7 +131,7 @@ srf.invite([initLocals], async (req, res) => {
   session.connect();
 });
 
-srf.use('register', [initLocals, regParser, checkCache, challenge]);
+srf.use('register', [regParser, checkCache, challenge]);
 srf.register(require('./lib/register')({ logger }));
 srf.subscribe(require('./lib/subscribe')({ logger }));
 srf.publish(require('./lib/publish')({ logger }));
