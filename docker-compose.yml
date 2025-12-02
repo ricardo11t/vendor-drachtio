@@ -8,9 +8,9 @@ services:
     restart: always
     # MUDANÇA CRUCIAL: Rede do Host (VPS) direta
     network_mode: "host"
-    # CORREÇÃO: Especificar IP privado da máquina e o IP público para NAT
-    # Sintaxe: sip:LOCAL_IP!PUBLIC_IP:porta;transport=protocolo
-    command: drachtio --contact "sip:172.31.2.132!56.125.223.86:5060;transport=udp,tcp" --port 9022 --secret cymru
+    # CORREÇÃO: Escutar apenas no IP local, deixar NAT fazer seu trabalho
+    # Drachtio vai escutar em 172.31.2.132:5060, e bots vão contactar em 56.125.223.86:5060
+    command: drachtio --contact "sip:172.31.2.132:5060;transport=udp,tcp" --port 9022 --secret cymru
     environment:
       DRACHTIO_SECRET: cymru
 
