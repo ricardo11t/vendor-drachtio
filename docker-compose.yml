@@ -8,8 +8,8 @@ services:
     restart: always
     # MUDANÇA CRUCIAL: Rede do Host (VPS) direta
     network_mode: "host"
-    # CORREÇÃO: Porta 5060 para SIP (REGISTER/INVITE), 9022 para aplicações drachtio
-    command: drachtio --contact "sip:*;transport=udp,tcp" --address 0.0.0.0 --port 5060 --application-port 9022
+    # CORREÇÃO: --contact especifica porta SIP (5060), --port especifica porta aplicação (9022)
+    command: drachtio --contact "sip:*:5060;transport=udp,tcp" --port 9022 --secret cymru
     environment:
       DRACHTIO_SECRET: cymru
 
@@ -22,15 +22,15 @@ services:
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
-      timeout: 5s
-      retries: 5
+      timeout: 3s
+      retries: 3
 
   rtpengine:
-    image: jambonz/rtpengine:latest
+    image: drachtio/rtpengine:latest
     container_name: rtpengine
     restart: always
     network_mode: "host"
-    entrypoint: /usr/local/bin/rtpengine
+    privileged: true
     command: >
       rtpengine --interface=public/172.31.2.132!56.125.223.86
       --listen-ng=127.0.0.1:22222
@@ -39,7 +39,6 @@ services:
       --recording-method=none
       --log-level=7
       --foreground
-    privileged: true
 
   sip-controller:
     build:
@@ -67,6 +66,8 @@ services:
         condition: service_started
       redis:
         condition: service_healthy
+      rtpengine:
+        condition: service_started
     logging:
       driver: "json-file"
       options:
