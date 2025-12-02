@@ -57,6 +57,8 @@ services:
       DRACHTIO_SECRET: cymru
       REDIS_HOST: 127.0.0.1
       REDIS_PORT: 6379
+      RTPENGINE_HOST: 127.0.0.1
+      RTPENGINE_PORT: 22222
       
       PUBLIC_IP: ${PUBLIC_IP}
       BACKEND_URL: ${BACKEND_URL}
