@@ -144,8 +144,19 @@ srf.invite(async (req, res) => {
   const from = req.get('From');
   const to = req.get('To');
   const source = `${req.source_address}:${req.source_port}`;
+  const contentType = req.get('Content-Type');
+  const contentLength = req.get('Content-Length');
 
-  logger.info({ callId, uri, from, to, source }, '🎯 INVITE HANDLER TRIGGERED - Processing call');
+  logger.info({ 
+    callId, 
+    uri, 
+    from, 
+    to, 
+    source, 
+    contentType,
+    contentLength,
+    hasSdp: !!req.raw
+  }, '🎯 INVITE HANDLER TRIGGERED - Processing call');
 
   try {
     // Refresh SIP config before each call (cached)
