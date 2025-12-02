@@ -127,8 +127,11 @@ jobs:
             echo "Parando containers antigos..."
             docker-compose down || true
             
-            echo "Buildando e iniciando nova versão..."
-            docker-compose up -d --build
+            echo "Removendo imagens antigas para forçar rebuild..."
+            docker rmi vendor-drachtio-sip-controller:latest 2>/dev/null || true
+            
+            echo "Buildando e iniciando nova versão (sem cache)..."
+            docker-compose up -d --build --no-cache
 
             sleep 15
 
